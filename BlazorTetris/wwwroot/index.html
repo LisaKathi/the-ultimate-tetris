@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width">
+    <title>BlazorTetris</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/site.css" rel="stylesheet" />
+
+
+    <script>
+
+        function checkKey(e) {
+            e = e || window.event;
+            if (e.keyCode == `37` || e.keyCode == `39`) {
+                DotNet.invokeMethod(`BlazorTetris`, `LeftRightPressedJS`, e.keyCode == `37` ? (-1) : (+1));
+            }
+        }
+        document.onkeydown = checkKey;
+    </script>
+</head>
+<body>
+    <app><img src="title.png"></app>
+
+    <div id="farbe">
+        <form>
+            <select name="auswahl" id="color" onchange="getColor()">
+                <option value=" red">Rot</option>
+                <option value="green">Grün</option>
+                <option value="blue">Blau</option>
+                <option value="orange">Orange</option>
+                <option value="yellow">Gelb</option>
+                <option value="violet">Violet</option>
+            </select>
+        </form>
+    </div>
+
+    <script type="text/javascript">
+        function getColor() {
+            document.getElementsByTagName("body")[0].style.background = document.getElementById("color").value;
+        }
+    </script>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+﻿@page "/"
+@using BlazorTetris.Logic
+@implements IDisposable
+
+<h1>The Ultimate Tetris</h1>
+
+<table align="center">
+    @if (lost)
+    {
+        <tr>
+            <th class="style2">Verloren</th>
+
+        </tr>
+        <tr></tr>
+    }
+</table>
+
+<table align="center" class="estyle">
+    @for (var row = 0; row < ROWS; row++)
+    {
+        <tr>
+            @for (var col = 0; col < COLUMNS; col++)
+            {
+                <td class="@board[row, col]"></td>
+            }
+        </tr>
+    }
+
+</table>
+
+
+
+
+@functions {
+    private const int ROWS = 16;
+    private const int COLUMNS = 10;
+   
+
+    private string[,] board;
+    private bool lost = false;
+
+    private string[,] currentPiece = null;
+    private (int x, int y) currentPiecePosition = (0, 0);
+
+    static event EventHandler<int>
+    LeftRightPressed;
+
+    [JSInvokable]
+    public static void LeftRightPressedJS(int direction)
+    {
+    Console.WriteLine(direction);
+    LeftRightPressed?.Invoke(null, direction);
+    }
+
+    protected override void OnInit()
+    {
+    InitializeBoard();
+    GameLoopAsync();
+
+    LeftRightPressed += HandleArrowKey;
+    }
+
+    public void Dispose()
+    {
+    LeftRightPressed -= HandleArrowKey;
+    }
+    private void HandleArrowKey(object _, int direction)
+    {
+    var moved = false;
+    RemoveCurrentPiece();
+    var newX = currentPiecePosition.x + direction;
+    if (newX >= 0 && (newX + currentPiece.GetLength(1)) <= COLUMNS && IsPositionPossible((newX, currentPiecePosition.y)))
+    {
+    currentPiecePosition.x = newX;
+    moved = true;
+    }
+    DrawCurrentPiece();
+    if (moved)
+    {
+    StateHasChanged();
+    }
+    }
+
+    private async void GameLoopAsync()
+    {
+    NewPiece();
+    do
+    {
+    DrawCurrentPiece();
+    StateHasChanged();
+
+    await Task.Delay(400);
+
+    RemoveCurrentPiece();
+
+    if (currentPiecePosition.y + currentPiece.GetLength(0) < ROWS &&
+    IsPositionPossible((currentPiecePosition.x, currentPiecePosition.y + 1)))
+    {
+
+    currentPiecePosition.y++;
+    }
+    else
+    {
+    DrawCurrentPiece();
+    NewPiece();
+    if (!IsPositionPossible(currentPiecePosition))
+    {
+    lost = true;
+    }
+    }
+    }
+    while (!lost);
+    StateHasChanged();
+    }
+
+    private void RemoveCurrentPiece() => currentPiece.Iterate((row, col) =>
+    {
+    if (currentPiece[row, col] != string.Empty)
+    {
+    board[currentPiecePosition.y + row, currentPiecePosition.x + col] = string.Empty;
+    }
+    });
+    private void DrawCurrentPiece() => currentPiece.Iterate((row, col) =>
+    {
+    if (currentPiece[row, col] != string.Empty)
+    {
+    board[currentPiecePosition.y + row, currentPiecePosition.x + col] =
+    currentPiece[row, col];
+    }
+
+
+    });
+
+
+
+    private void NewPiece()
+    {
+    currentPiece = Pieces.GetRandomPiece();
+    currentPiecePosition.y = 0;
+    currentPiecePosition.x = (COLUMNS - currentPiece.GetLength(1)) / 2;
+    }
+    private void InitializeBoard()
+    {
+    board = new string[ROWS, COLUMNS];
+    board.Iterate((row, col) => board[row, col] = string.Empty);
+    }
+
+    private bool IsPositionPossible((int x, int y) target) =>
+    currentPiece.Iterate((row, col) => currentPiece[row, col] == string.Empty || board[target.y + row, target.x + col] == string.Empty);
+
+
+    }
